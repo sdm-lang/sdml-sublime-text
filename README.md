@@ -21,7 +21,7 @@ except for formal constraints and type-class method definitions.
 Additionally, the invaluable [bat](https://github.com/sharkdp/bat) command-line tool uses `.sublime-syntax` files to do
 terminal source highlighting.
 
-A Github workflow attaches a downloadable `.sublime-package` file to each release.
+A Github workflow attaches a downloadable `.sublime-package` file to each [release](./releases/).
 
 ## Features
 

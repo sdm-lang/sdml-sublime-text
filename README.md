@@ -42,6 +42,8 @@ installed, link the repository into the `bat` configuration folder.
 $ curl https://raw.githubusercontent.com/sdm-lang/sdml-sublime-text/main/install.sh | sh
 ```
 
+Alternatively, you can download a release zip file from Github and unzip on the Sublime Text Packages directory.
+
 ## TODO
 
 1. Copy over snippets from the TextMate bundle.

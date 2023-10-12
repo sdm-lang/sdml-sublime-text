@@ -22,7 +22,13 @@ Additionally, the invaluable [bat](https://github.com/sharkdp/bat) command-line 
 
 ## Features
 
-1. Syntax highlighting based on a [`.sublime-syntax`](https://www.sublimetext.com/docs/syntax.html) grammar.
+Syntax highlighting based on a [`.sublime-syntax`](https://www.sublimetext.com/docs/syntax.html) grammar.
+
+![Sublime Text Highlighting](./images/sublime.png)
+
+Grammar integrated into the `bat` pager.
+
+![Bat Highlighting](./images/sublime-bat.png)
 
 ## Installation
 

@@ -1,0 +1,686 @@
+%YAML 1.2
+---
+name: SDML
+scope: source.sdml
+file_extensions:
+  - sdm
+  - sdml
+
+variables:
+  ident:     '[\p{Lower}\p{Upper}][\p{Lower}\p{Upper}\p{Digit}]*(?:_[\p{Lower}\p{Upper}\p{Digit}]+)*'
+  qualident: '{{ident}}:{{ident}}'
+  identref:  '{{ident}}(?::{{ident}})?'
+
+  has_type: '\s*((?:->)|→)\s*'
+  type_restriction: '\s*((?:<-)|←)\s*'
+  inverse_name: '\s*(\()\s*({{ident}})\s*(\))\s*'
+  cardinality: '\s*(\{)\s*(?:(ordered|unordered)\s*)?(?:(unique|nonunique)\s*)?(\d+)(?:(\.\.)(\d+)?)?(\})\s*'
+  cardinality_ref: '(?x) \s* (\{) \s* (?:(ordered|unordered)\s*)? (?:(unique|nonunique)\s*)? (?:(\d+) (?:(\.\.)(\d+)?)?)? (\}) \s*'
+  member_type: '(?:(features)\s+)?(?:{{type_reference}})'
+
+  class_param: '({{cardinality_ref}})?({{ident}})'
+
+  type_reference: '(?:(?:\b(boolean|unsigned|integer|decimal|double|string|iri|binary)\b)|({{identref}}))'
+
+  natural_language_tag: '@[a-z]{2,8}(?:-[A-Z]{3}){0,3}(?:-[A-Z][a-z]{3})?(?:-(?:[A-Z]{2}|[0-9]{3}))?'
+  controlled_language_tag: '@[a-z]{2,3}(?:-[A-Z][A-Za-z]{1,9})?'
+
+  iri: '(?x) (\<) (?:[^\x00-\x20\<\>\\\"\{\}\|\^`] | (?:\\u[0-9A-Fa-f]{4}|\\U[0-9A-Fa-f]{8}))* (\>)'
+
+contexts:
+  prototype:
+    - include: line_comment
+
+  main:
+    - match: '(?x)  \b(module)\b  \s+  ({{ident}})  (?:\s+(base)\s+({{iri}}))?  \s+  (is)'
+      captures:
+        1: keyword.other.module.sdml
+        2: entity.name.module.sdml
+        3: keyword.other.base.sdml
+        4: string.iri.sdml
+        5: punctuation.definition.iri.begin.sdml
+        6: punctuation.definition.iri.end.sdml
+        7: keyword.other.is.sdml
+      push: module_body
+ 
+  module_body:
+    - meta_scope: meta.definition.module.sdml
+
+    - include: import_statement
+
+    - include: annotation_property
+    - include: constraint
+
+    - include: datatype_def
+    - include: entity_def
+    - include: enum_def
+    - include: event_def
+    - include: property_def
+    - include: structure_def
+    - include: type_class_def
+    - include: union_def
+
+    - match: '\bend\b'
+      scope: keyword.other.end.sdml
+      pop: true
+
+  import_statement:
+    - match: '\bimport\b'
+      scope: keyword.other.import.sdml
+      push: 
+        - meta_scope: meta.expression.import.sdml
+        - match: '\['
+          scope: punctuation.definition.sequence.begin.sdml
+          push: 
+            - match: '\b{{qualident}}\b'
+              scope: support.class.sdml
+            - match: '\b{{ident}}\b'
+              scope: support.other.module.sdml
+            - match: '\]'
+              scope: punctuation.definition.sequence.end.sdml
+              pop: true
+          pop: true
+
+        - match: '\b{{qualident}}\b'
+          scope: support.class.sdml
+          pop: true
+
+        - match: '\b{{ident}}\b'
+          scope: support.other.module.sdml
+          pop: true
+
+  annotation_only_body:
+    - match: '\bis\b'
+      scope: keyword.other.is.sdml
+      push:
+        - include: annotation_property
+        - include: constraint
+
+        - match: '\bend\b'
+          scope: keyword.other.end.sdml
+          pop: true
+    
+  annotation_property:
+    - match: '@'
+      scope: punctuation.definition.annotation.begin.sdml
+      push:
+        - meta_scope: meta.annotation.property.sdml
+        - match: '({{identref}})\s*(=)'
+          captures:
+            1: entity.name.annotation.sdml
+            2: keyword.operator.assignment.sdml
+        - include: value
+          pop: true
+
+  constraint:
+    - match: '\b(assert)\b\s+({{ident}})'
+      captures: 
+        1: keyword.other.assert.sdml
+        2: entity.name.constraint.sdml
+      branch_point: constraint_kind
+      branch:
+        - formal_constraint
+        - informal_constraint
+
+  informal_constraint:
+    - meta_scope: meta.annotation.constraint.informal.sdml
+    - match: '\s*(is)'
+      fail: constraint_kind
+    - match: '\s*(=)'
+      scope: keyword.operator.assignment.sdml
+    - include: constraint_string
+      pop: true
+
+  formal_constraint:
+    - meta_scope: meta.annotation.constraint.formal.sdml
+    - match: '\s*(=)'
+      fail: constraint_kind
+    - match: '\s*(is)'
+      scope: keyword.other.is.sdml
+      push:
+        - match: '\bend\b'
+          scope: keyword.other.end.sdml
+          pop: true
+        - match: '\bdef\b\s+({{ident}})'
+          captures: 
+            1: keyword.other.def.sdml
+            2: entity.name.constraint.definition.sdml
+          push:
+            - match: '\('
+              scope: punctuation.definition.parameters.begin.sdml
+              push: 
+                - include: method_param
+                - match: '(\))'
+                  scope: punctuation.definition.parameters.end.sdml
+                  pop: true
+            - include: method_type
+            - match: ':=|≔'
+              scope: keyword.operator.definition.sdml
+            - include: sentence_components    
+        - match: '\bin\b'
+          scope: keyword.other.in.end
+        - include: sentence_components
+      pop: true
+
+  quantifier:
+    - match: '(?x) \b(forall|\x{2200}|exists|\x{2203})\b \s+ (?: (self) | (?: ({{ident}}) (?: (\b(in|∈)\b) ({{identref}})) ) ) (?:\s*(,))?'
+      captures:
+        1: keyword.other.quantifier.sdml
+        2: variable.language.self.sdml
+        3: variable.quantified.sdml
+        4: keyword.operator.set-membership.sdml
+        5: variable.sdml
+        6: punctuation.separator.quantifier.sdml
+
+  function_call:
+    - meta_content_scope: meta.function-call.sdml
+    - match: '({{ident}})\s*(\()'
+      captures:
+        1: variable.function.sdml
+        2: punctuation.arguments.begin.sdml
+      push: function_arguments
+
+  function_composition:
+    - meta_content_scope: meta.function-call.sdml
+    - match: '(?x) (?: (self) | ({{ident}}) ) (\.) ({{ident}})'
+      captures:
+        1: variable.language.self.sdml
+        2: variable.sdml
+        3: keyword.operator.composition.sdml
+        4: variable.function.sdml
+    - include: composed_function
+    - match: '\('
+      scope: punctuation.arguments.begin.sdml
+      push: function_arguments
+
+  sequence_builder:
+    - match: '\{'
+      scope: punctuation.expression.sequence-builder.begin.sdml
+      push:
+        - match: '({{ident}})+'
+          captures: 
+            1: variable.sequence.sdml
+        - match: '|'
+          scope: punctuation.separator.sequence-builder.sdml
+        - match: '\}'
+          scope: punctuation.expression.sequence-builder.end.sdml
+          pop: true 
+        - include: sentence_components
+ 
+  sentence_components:
+    - include: quantifier
+    - include: function_call
+    - include: function_composition
+    - include: sequence_builder
+    - include: operators
+    - include: variable
+    - include: value
+    - match: '\('
+      scope: punctuation.expression.nested.begin.sdml
+      push:
+        - match: '\)'
+          scope: punctuation.expression.nested.end.sdml
+          pop: true
+        - include: quantifier
+        - include: sentence_components
+
+  composed_function:
+    - match: '(\.)({{ident}})'
+      captures:
+        1: keyword.operator.composition.sdml
+        2: variable.function.sdml
+
+  function_arguments:
+    - match: '\)'
+      scope: punctuation.arguments.end.sdml
+      pop: true
+    - include: sentence_components
+
+  variable:
+    - match: '{{ident}}'
+      scope: variable.other.sdml
+
+  operators:
+    - include: equality
+    - include: inequality
+    - include: logical_negation
+    - include: logical_connective
+    - include: sets
+
+  equality:
+    - match: '\b(=)\b'
+      scope: keyword.operator.equality.sdml
+
+  inequality:
+    - match: '\b(\/=|≠≤|<|>|<=|>=)\b'
+      scope: keyword.operator.inequality.sdml
+
+  logical_negation:
+    - match: '\b(not|¬)\b'
+      scope: keyword.operator.logical-negation.sdml
+
+  logical_connective:
+    - match: '\b(and|∧|or|∨|xor|⊻|implies|==>|⟹|iff|⇔)\b'
+      scope: keyword.operator.logical-connective.sdml
+
+  sets:
+    - match: '\b(in|∈)\b'
+      scope: keyword.operator.set-membership.sdml
+
+  datatype_def:
+    - match: '(?x) \b(datatype)\b \s+ ({{ident}}) {{type_restriction}} (?:\b(opaque)\s+)? ({{identref}})'
+      captures:
+        1: keyword.other.datatype.sdml
+        2: entity.name.datatype.sdml
+        3: keyword.operator.type-restriction.sdml
+        4: keyword.other.opaque.sd
+        5: support.class.sdml
+    - include: annotation_only_body
+
+  entity_def:
+    - match: '\b(entity)\b\s+({{ident}})\s+(is)'
+      captures:
+        1: keyword.other.entity.sdml
+        2: entity.name.entity.sdml
+        3: keyword.other.is.sdml
+      push: 
+        - meta_scope: meta.definition.entity.sdml
+
+        - include: annotation_property
+        - include: constraint
+
+        - match: '\b(identity)\b'
+          scope: storage.modifier.identity.sdml
+
+        - include: member
+        - include: member_group
+
+        - match: '\bend\b'
+          scope: keyword.other.end.sdml
+          pop: true
+
+  enum_def:
+    - match: '\b(enum)\b\s+({{ident}})\s+(of)'
+      captures:
+        1: keyword.other.enum.sdml
+        2: entity.name.enum.sdml
+        3: keyword.other.of.sdml
+      push: 
+        - meta_scope: meta.definition.enum.sdml
+
+        - include: annotation_property
+        - include: constraint
+
+        - match: '\bend\b'
+          scope: keyword.other.end.sdml
+          pop: true
+
+        - include: value_variant
+
+  value_variant:
+    - match: '(?!\bis\b){{identref}}'
+      scope: entity.name.constant.sdml
+    - include: annotation_only_body
+
+  event_def:
+    - match: '\b(event)\b\s+({{ident}})\s+(source)\s+({{identref}})\s+(is)'
+      captures:
+        1: keyword.other.event.sdml
+        2: entity.name.event.sdml
+        3: keyword.other.source.sdml
+        4: support.class.sdml
+        5: keyword.other.is.sdml
+      push: 
+        - meta_scope: meta.definition.event.sdml
+
+        - include: annotation_property
+        - include: constraint
+
+        - include: member
+        - include: member_group
+
+        - match: '\bend\b'
+          scope: keyword.other.end.sdml
+          pop: true
+
+  property_def:
+    - match: '\b(property)\b\s+({{ident}})\s+(is)'
+      captures:
+        1: keyword.other.property.sdml
+        2: entity.name.property.sdml
+        3: keyword.other.is.sdml
+      push: 
+        - meta_scope: meta.definition.property.sdml
+
+        - include: annotation_property
+        - include: constraint
+
+        - include: member
+
+        - match: '\bend\b'
+          scope: keyword.other.end.sdml
+          pop: true
+
+  structure_def:
+    - match: '\b(structure)\b\s+({{ident}})\s+(is)'
+      captures:
+        1: keyword.other.structure.sdml
+        2: entity.name.structure.sdml
+        3: keyword.other.is.sdml
+      push: 
+        - meta_scope: meta.definition.structure.sdml
+
+        - include: annotation_property
+        - include: constraint
+
+        - include: member
+        - include: member_group
+
+        - match: '\bend\b'
+          scope: keyword.other.end.sdml
+          pop: true
+
+  type_class_def:
+    - meta_content_scope: meta.definition.type-class.sdml
+    - match: '\bclass\b'
+      scope: keyword.other.class.sdml
+      push: type_class_head
+
+    - include: annotation_property
+    - include: constraint
+
+    - include: method_def
+
+    - match: '\bend\b'
+      scope: keyword.other.end.sdml
+
+  type_class_head:
+    - match: '{{ident}}'
+      scope: entity.name.class.sdml
+    - match: '\('
+      scope: punctuation.definition.class-params.begin.sdml
+      push: type_class_params
+    - match: '(\))\s*(is)'
+      captures: 
+        1: punctuation.definition.class-params.end.sdml
+        2: keyword.other.is.sdml
+      pop: true
+
+  type_class_params:
+    - match: '{{class_param}}'
+      captures:
+        2: punctuation.definition.cardinality.begin.sdml
+        3: storage.modifier.ordering.sdml
+        4: storage.modifier.uniqueness.sdml
+        5: constant.numeric.sdml
+        6: keyword.operator.range.sdml
+        7: constant.numeric.sdml
+        8: punctuation.definition.cardinality.end.sdml
+        9: support.class.sdml
+    - match: '\+'
+      scope: keyword.operator.type-sum.sdml
+    - match: '(?=\))'
+      pop: true
+
+  union_def:
+    - match: '\b(union)\b\s+({{ident}})\s+(of)'
+      captures:
+        1: keyword.other.union.sdml
+        2: entity.name.union.sdml
+        3: keyword.other.of.sdml
+      push: 
+        - meta_scope: meta.definition.union.sdml
+
+        - include: annotation_property
+        - include: constraint
+
+        - match: '\bend\b'
+          scope: keyword.other.end.sdml
+          pop: true
+
+        - include: type_variant
+
+  type_variant:
+    - match: '(?!\bis\b)({{identref}})\s+(as)\s+({{ident}})'
+      captures: 
+        1: support.class.sdml
+        2: keyword.other.as.sdml
+        3: entity.name.constructor.sdml
+    - match: '(?!\bis\b){{identref}}'
+      scope: entity.name.constructor.sdml
+    - include: annotation_only_body
+
+  member:
+    - meta_content_scope: meta.definition.member.sdml
+    - match: '({{ident}})(?:{{inverse_name}})?{{has_type}}(?:{{cardinality}})?{{member_type}}'
+      captures:
+        # group 1
+        1: entity.name.member.sdml
+        # group 2
+        2: punctuation.definition.inverse_name.begin.sdml
+        3: entity.name.member.sdml
+        4: punctuation.definition.inverse_name.end.sdml
+        # group 3
+        5: keyword.operator.has-type.sdml
+        # group 4
+        6: punctuation.definition.cardinality.end.sdml
+        7: storage.modifier.ordering.sdml
+        8: storage.modifier.uniqueness.sdml
+        9: constant.numeric.sdml
+        10: keyword.operator.range.sdml
+        11: constant.numeric.sdml
+        12: punctuation.definition.cardinality.end.sdml
+        # group 5
+        13: keyword.operator.features.sdml
+        14: storage.type.sdml
+        15: support.class.sdml
+    - include: annotation_only_body
+  
+  member_group:
+    - match: '\bgroup\b'
+      scope: keyword.other.group.sdml
+      push:
+      - include: annotation_property
+      - include: constraint
+      - include: member
+
+      - match: '\bend\b'
+        scope: keyword.other.end.sdml
+        pop: true
+
+  method_def:
+    - match: '(\bdef\b)\s+({{ident}})'
+      captures:
+        1: keyword.other.def.sdml
+        2: entity.name.method.sdml
+    - match: '\('
+      scope: punctuation.definition.parameters.begin.sdml
+      push: 
+        - include: method_param
+        - match: '(\))'
+          scope: punctuation.definition.parameters.end.sdml
+          pop: true
+    - include: method_type
+    - include: method_body
+    - include: annotation_only_body
+
+  method_param:
+    - match: '(?x)  ({{ident}})  {{has_type}}  (?:{{cardinality}})?  {{type_reference}}'
+      captures:
+        # group 1
+        1: variable.parameter.sdml
+        # group 2
+        2: keyword.operator.has-type.sdml
+        # group 3
+        3: punctuation.definition.cardinality.end.sdml
+        4: storage.modifier.ordering.sdml
+        5: storage.modifier.uniqueness.sdml
+        6: constant.numeric.sdml
+        7: keyword.operator.range.sdml
+        8: constant.numeric.sdml
+        9: punctuation.definition.cardinality.end.sdml
+        # group 4
+        10: storage.type.sdml
+        11: support.class.sdml
+
+  method_type:
+    - match: '{{has_type}}(?:{{cardinality}})?{{type_reference}}'
+      captures:
+        # group 1
+        1: keyword.operator.has-type.sdml
+        # group 3
+        2: punctuation.definition.cardinality.end.sdml
+        3: storage.modifier.ordering.sdml
+        4: storage.modifier.uniqueness.sdml
+        5: constant.numeric.sdml
+        6: keyword.operator.range.sdml
+        7: constant.numeric.sdml
+        8: punctuation.definition.cardinality.end.sdml
+        # group 4
+        9: storage.type.sdml
+        10: support.class.sdml            
+
+  method_body:
+    - match: ':='
+      scope: keyword.operator.definition.sdml
+      push:
+        - match: '(?=\bis\b)'
+          pop: true
+        - include: sentence_components
+
+  simple_value:
+    - include: literal_binary
+    - include: literal_boolean
+    - include: literal_numeric
+    - include: literal_string
+    - include: literal_iri
+
+  value:
+    - include: simple_value
+    - include: value_constructor
+    - include: literal_sequence_empty
+    - include: literal_sequence
+ 
+  value_constructor:
+    - meta_content_scope: meta.value.constructor.sdml
+    - match: '({{identref}})\s*(\()'
+      captures:
+        1: support.class.name.sdml
+        2: punctuation.definition.arguments.begin.smdl
+      push:
+        - include: simple_value
+
+    - match: '\)'
+      scope: punctuation.definition.arguments.end.smdl
+      pop: true
+ 
+  literal_binary:
+    - match: '\#\['
+      scope: punctuation.definition.binary.begin.sdml
+      push: 
+        - match: '\h\h'
+          scope: constant.numeric.byte.sdml
+
+        - match: '\]'
+          scope: punctuation.definition.binary.end.sdml
+          pop: true
+      pop: true
+
+  literal_boolean:
+    - match: '\b(true|false|⊤|⊥)\b'
+      scope: constant.language.boolean.sdml
+      pop: true
+
+  literal_numeric:
+    - match: '[+\-]?(?:0|[1-9][0-9]*)(?:\.[0-9]+)[eE][+\-]?(?:0|[1-9][0-9]*)'
+      scope: constant.numeric.double.sdml
+      pop: true
+    
+    - match: '[+\-]?(?:0|[1-9][0-9]*)(?:\.[0-9]+)'
+      scope: constant.numeric.decimal.sdml
+      pop: true
+    
+    - match: '[+\-]?(?:0|[1-9][0-9]*)'
+      scope: constant.numeric.integer.sdml
+      pop: true
+    
+    - match: '0|[1-9][0-9]*'
+      scope: constant.numeric.unsigned.sdml
+      pop: true
+
+  literal_sequence:
+    - match: '\['
+      scope: punctuation.definition.sequence.begin.sdml
+      push:
+        - match: '(?!\])'
+          push: value
+     
+        - match: '\]'
+          scope: punctuation.definition.sequence.end.sdml
+          pop: true
+      pop: true
+
+  literal_sequence_empty:
+    - match: '\b∅\b'
+      scope: constant.sequence.empty.sdml
+
+  literal_string:
+    - meta_content_scope: constant.string.sdml
+    - match: '"'
+      scope: punctuation.definition.string.begin.sdml
+      push: 
+        - meta_include_prototype: false
+     
+        - match: '\\(a|b|n|r|t|v|\\|''|"|0)'
+          scope: constant.character.escape.sdml
+
+        - match: '\\u\{(\h\h){1,3}\}'
+          scope: constant.character.escape.sdml
+
+        - match: '[^\\\"]'
+          scope: string.quoted.double.sdml
+     
+        - match: '(")({{natural_language_tag}})?'
+          captures: 
+            1: punctuation.definition.string.end.sdml
+            2: string.language.controlled.sdml
+          pop: true
+      pop: true
+
+  literal_iri:
+    - meta_content_scope: string.iri.sdml
+    - match: '{{iri}}'
+      captures:
+        1: punctuation.definition.iri.begin.sdml
+        2: punctuation.definition.iri.end.sdml
+
+  constraint_string:
+    - meta_content_scope: string.sdml
+    - match: '"'
+      scope: punctuation.definition.string.begin.sdml
+      push: 
+        - meta_include_prototype: false
+     
+        - match: '\\(a|b|n|r|t|v|\\|''|"|0)'
+          scope: constant.character.escape.sdml
+
+        - match: '\\u\{(\h\h){1,3}\}'
+          scope: constant.character.escape.sdml
+
+        - match: '[^\\\"]'
+          scope: string.quoted.double.sdml
+     
+        - match: '(")({{controlled_language_tag}})?'
+          captures: 
+            1: punctuation.definition.string.end.sdml
+            2: string.language.natural.sdml
+          pop: true
+      pop: true
+
+  line_comment:
+    - match: ';'
+      scope: punctuation.definition.comment.sdml
+      push: 
+        - meta_scope: comment.line.sdml
+        - match: '$'
+          pop: true

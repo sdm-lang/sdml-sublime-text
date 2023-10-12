@@ -1,0 +1,8 @@
+<snippet>
+	<content><![CDATA[
+module ${1} base <https://example.org/schema/${1}> is
+end
+]]></content>
+	<tabTrigger>mod</tabTrigger>
+	<scope>source.sdml</scope>
+</snippet>

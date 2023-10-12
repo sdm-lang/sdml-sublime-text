@@ -1,0 +1,19 @@
+{
+    "cmd": ["sdml", "validate", "-i" "$file"],
+    "selector": "source.sdml",
+    "variants":
+    [
+        {
+            "cmd": ["sdml", "draw", "-d", "concepts", "-i", "$file"],
+            "name": "Draw Concept Diagram"
+        },
+        {
+            "cmd": ["sdml", "test"],
+            "name": "Draw Entity-Relationship Diagram"
+        },
+        {
+            "cmd": ["sdml", "clean"],
+            "name": "Draw UML Class"
+        }
+    ]
+}

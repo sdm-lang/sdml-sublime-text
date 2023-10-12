@@ -5,10 +5,6 @@ on:
     types:
       - created
 
-env:
-  PACKAGE_NAME: SDML
-
-
 jobs:
   package:
     permissions: write-all
@@ -18,12 +14,12 @@ jobs:
       - uses: actions/checkout@v2
 
       - name: Zip Folder
-        run: zip -r "$PACKAGE_NAME.sublime-package" . -x ".git/*" -x ".github/*" -x ".gitignore" -x "images/" -x "install.sh"
+        run: zip -r "SDML.sublime-package" . -x ".git/*" -x ".github/*" -x ".gitignore" -x "images/" -x "install.sh"
 
       - name: Release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          files: "$PACKAGE_NAME.sublime-package"
+          files: "SDML.sublime-package"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

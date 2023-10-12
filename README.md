@@ -18,7 +18,10 @@
 This is a reasonably complete [package](https://www.sublimetext.com/docs/packages.html) for the [Sublime Text](https://www.sublimetext.com/) editor. The provided syntax highlighting is mostly complete
 except for formal constraints and type-class method definitions.
 
-Additionally, the invaluable [bat](https://github.com/sharkdp/bat) command-line tool uses `.sublime-syntax` files to do terminal source highlighting.
+Additionally, the invaluable [bat](https://github.com/sharkdp/bat) command-line tool uses `.sublime-syntax` files to do
+terminal source highlighting.
+
+A Github workflow attaches a downloadable `.sublime-package` file to each release.
 
 ## Features
 

@@ -15,14 +15,14 @@
         Simple                      Modeling
 ```
 
-This is a reasonably complete [package](https://www.sublimetext.com/docs/packages.html) for [Sublime Text](https://www.sublimetext.com/) editor. The syntax highlighting is mostly complete except for
-formal constraints and type-class method definitions.
+This is a reasonably complete [package](https://www.sublimetext.com/docs/packages.html) for the [Sublime Text](https://www.sublimetext.com/) editor. The provided syntax highlighting is mostly complete
+except for formal constraints and type-class method definitions.
 
 Additionally, the invaluable [bat](https://github.com/sharkdp/bat) command-line tool uses `.sublime-syntax` files to do terminal source highlighting.
 
 ## Features
 
-1. Syntax highlighting based on a `[.sublime-syntax](https://www.sublimetext.com/docs/syntax.html)` grammar.
+1. Syntax highlighting based on a [`.sublime-syntax`](https://www.sublimetext.com/docs/syntax.html) grammar.
 
 ## Installation
 

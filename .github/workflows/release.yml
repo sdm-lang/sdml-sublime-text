@@ -6,10 +6,6 @@ on:
       - created
 
 env:
-  GIT_IGNORE: -x ".git/*" -x ".github/*" -x ".gitignore"
-  MAC_IGNORE: -x ".DS_Store"
-  EMACS_IGNORE: -x "*~" -x ".*.~undo-tree~"
-  IGNORE: -x "images/" -x "install.sh"
   PACKAGE_NAME: SDML
 
 
@@ -22,12 +18,12 @@ jobs:
       - uses: actions/checkout@v2
 
       - name: Zip Folder
-        run: zip -r "${PACKAGE_NAME}.sublime-package" . $GIT_IGNORE $MAC_IGNORE $EMACS_IGNORE $IGNORE
+        run: zip -r "$PACKAGE_NAME.sublime-package" . -x ".git/*" -x ".github/*" -x ".gitignore" -x "images/" -x "install.sh"
 
       - name: Release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          files: "${PACKAGE_NAME}.sublime-package"
+          files: "$PACKAGE_NAME.sublime-package"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

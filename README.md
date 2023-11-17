@@ -1,19 +1,6 @@
 # SDML Package for Sublime Text
 
-```
-        ___          _____          ___
-       /  /\        /  /::\        /__/\
-      /  /:/_      /  /:/\:\      |  |::\
-     /  /:/ /\    /  /:/  \:\     |  |:|:\    ___     ___
-    /  /:/ /::\  /__/:/ \__\:|  __|__|:|\:\  /__/\   /  /\
-   /__/:/ /:/\:\ \  \:\ /  /:/ /__/::::| \:\ \  \:\ /  /:/
-   \  \:\/:/~/:/  \  \:\  /:/  \  \:\~~\__\/  \  \:\  /:/
-    \  \::/ /:/    \  \:\/:/    \  \:\         \  \:\/:/
-     \__\/ /:/      \  \::/      \  \:\         \  \::/
-       /__/:/        \__\/        \  \:\         \__\/
-       \__\/          Domain       \__\/          Language
-        Simple                      Modeling
-```
+![SDML Logo Text](https://raw.githubusercontent.com/sdm-lang/.github/main/profile/horizontal-text.svg)
 
 This is a reasonably complete [package](https://www.sublimetext.com/docs/packages.html) for the [Sublime Text](https://www.sublimetext.com/) editor. The provided syntax highlighting is mostly complete
 except for formal constraints and type-class method definitions.

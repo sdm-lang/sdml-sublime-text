@@ -44,13 +44,17 @@ $ curl https://raw.githubusercontent.com/sdm-lang/sdml-sublime-text/main/install
 
 Alternatively, you can download a release zip file from Github and unzip on the Sublime Text Packages directory.
 
-## TODO
+## License
 
-1. Copy over snippets from the TextMate bundle.
-1. Add configuration for a [build system](https://www.sublimetext.com/docs/build_systems.html).
+This package is released under the Apache License, Version 2.0. See LICENSE file for details.
 
 ## Changes
 
 **Version: 0.1.0**
 
 * Initial release, syntax highlighting only.
+
+## TODO
+
+1. Copy over snippets from the TextMate bundle.
+1. Add configuration for a [build system](https://www.sublimetext.com/docs/build_systems.html).
